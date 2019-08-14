@@ -1,0 +1,24 @@
+﻿#pragma kernel CSHUE
+#pragma kernel CSSatVal
+
+#include "ColorsManipulation.cginc"
+
+RWTexture2D<float4> Result;
+
+float hue;
+
+[numthreads(1,7,1)]
+void CSHUE (uint3 id : SV_DispatchThreadID)
+{
+	float3 hsv = float3(1-(id.y/350.0), 1, 1);
+
+    Result[id.xy] = hsv_to_rgb(float4(hsv,1));
+}
+
+[numthreads(8,8,1)]
+void CSSatVal (uint3 id : SV_DispatchThreadID)
+{
+	float3 hsv = float3(hue, id.x/512.0, id.y/512.0);
+
+    Result[id.xy] = hsv_to_rgb(float4(hsv,1));
+}

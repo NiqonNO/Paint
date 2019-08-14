@@ -1,0 +1,56 @@
+﻿#pragma kernel CSPencil
+#pragma kernel CSBrush
+#pragma kernel CSSpray
+
+//#include "ColorsManipulation.cginc"
+#include "SignedDistanceFunctions.cginc"
+
+RWTexture2D<float4> Result;
+//float4 coordinate;
+float2 coordinate;
+float brushSize;
+
+float4 color;
+float falloff;
+float timer;
+
+float rand(float x)
+{
+	return frac(sin(x)*1000.0);
+}
+
+[numthreads(32,32,1)]
+void CSPencil (uint3 id : SV_DispatchThreadID)
+{
+	float distance = max(0, sdCircle(id.xy - coordinate.xy, falloff));
+	float brush = (1 - saturate(sqrt((distance) / (brushSize-falloff))));
+
+	float4 col = lerp(Result[id.xy], color, brush);
+
+	Result[id.xy] = col;
+}
+
+[numthreads(32,32,1)]
+void CSBrush (uint3 id : SV_DispatchThreadID)
+{
+	float distance = max(0, sdCircle(id.xy - coordinate.xy, falloff));
+	float brush = (1 - saturate(sqrt((distance) / (brushSize-falloff)))) * timer;
+
+	float4 col = lerp(Result[id.xy], color, brush);
+ 
+	Result[id.xy] = col;
+}
+
+[numthreads(32,32,1)]
+void CSSpray (uint3 id : SV_DispatchThreadID)
+{
+	float distance = max(0, sdCircle(id.xy - coordinate.xy, falloff));
+	float brush = (1 - saturate(sqrt((distance) / (brushSize-falloff))));
+	float random = (rand((id.x+0.01)*(id.y+0.01))+0.01) * ceil(brush);
+
+	brush = round(saturate((brush + random)/2.0));
+
+	float4 col = lerp(Result[id.xy], color, brush);
+
+	Result[id.xy] = col;
+}
